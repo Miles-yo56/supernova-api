@@ -1,9 +1,9 @@
 
-# servidor.py
+# # servidor.py
 from flask import Flask, jsonify
 import os
 
-app = Flask(gunicorn servidor:app)
+app = Flask(__name__)  # CORREÇÃO AQUI
 
 @app.route("/")
 def home():
