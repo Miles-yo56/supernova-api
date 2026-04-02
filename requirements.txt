@@ -1,6 +1,4 @@
 Flask
-gunicorn
-requests
-matplotlib
 pandas
+matplotlib
 qrcode
