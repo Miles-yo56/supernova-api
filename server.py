@@ -24,12 +24,10 @@ def login():
     if request.method == "POST":
         token = request.form.get("token")
         if token in valid_tokens:
-            role = valid_tokens[token]
             return redirect(url_for("dashboard", token=token))
         else:
             error = "Token inválido!"
     return render_template("login.html", error=error)
-
 
 @app.route("/dashboard")
 def dashboard():
@@ -37,14 +35,12 @@ def dashboard():
     role = valid_tokens.get(token, "Visitante")
     return render_template("dashboard.html", role=role, token=token)
 
-
 @app.route("/perfil")
 def perfil():
     token = request.args.get("token")
     role = valid_tokens.get(token, "Visitante")
     now = datetime.datetime.now()
     return render_template("perfil.html", role=role, now=now)
-
 
 @app.route("/frequencia")
 def frequencia():
@@ -63,26 +59,21 @@ def frequencia():
     alerta = "Atenção! Frequência abaixo de 80%" if porcentagem < 80 else "Frequência ok"
     return render_template("frequencia.html", porcentagem=porcentagem, alerta=alerta, plot_url=plot_url)
 
-
 @app.route("/pe-de-meia")
 def pe_de_meia():
     return render_template("pe_de_meia.html")
-
 
 @app.route("/olimpico")
 def olimpico():
     return render_template("olimpico.html")
 
-
 @app.route("/cultura")
 def cultura():
     return render_template("cultura.html")
 
-
 @app.route("/home")
 def home():
     return render_template("home.html")
-
 
 @app.route("/dev")
 def dev():
@@ -91,7 +82,6 @@ def dev():
     if not role.startswith("Dev"):
         return "<h2>Acesso negado</h2>"
     return render_template("dev.html")
-
 
 # ------------------- EXECUÇÃO -------------------
 if __name__ == "__main__":
