@@ -1,4 +1,4 @@
-   from flask import Flask, render_template_string, request, redirect, url_for, jsonify
+from flask import Flask, render_template_string, request, redirect, url_for, jsonify
 import os
 import datetime
 import pandas as pd
@@ -24,10 +24,10 @@ login_html = """
 <head>
     <title>Login Supernova</title>
     <style>
-    body { background-color:#1E1E2F; color:#fff; font-family:Arial; text-align:center; padding-top:50px;}
-    input { padding:10px; font-size:16px; }
-    img { width:300px; margin-bottom:20px; border-radius:10px;}
-    a { color:#00BFFF; font-weight:bold; text-decoration:none; }
+        body { background-color:#1E1E2F; color:#fff; font-family:Arial; text-align:center; padding-top:50px;}
+        input { padding:10px; font-size:16px; }
+        img { width:300px; margin-bottom:20px; border-radius:10px;}
+        a { color:#00BFFF; font-weight:bold; text-decoration:none; }
     </style>
 </head>
 <body>
@@ -52,12 +52,12 @@ dashboard_html = """
 <head>
     <title>Supernova Dashboard</title>
     <style>
-    body { background-color:#121212;color:#fff;font-family:Arial;margin:0;padding:0;}
-    header { background:#1E90FF;padding:15px;text-align:center;font-size:24px; }
-    nav { background:#282828;padding:10px; }
-    nav a { color:#00BFFF;margin:0 10px;text-decoration:none;font-weight:bold; }
-    .dev-only { display:inline-block;background:#FFD700;padding:5px 10px;border-radius:5px;cursor:pointer;}
-    section { padding:20px; }
+        body { background-color:#121212;color:#fff;font-family:Arial;margin:0;padding:0;}
+        header { background:#1E90FF;padding:15px;text-align:center;font-size:24px; }
+        nav { background:#282828;padding:10px; }
+        nav a { color:#00BFFF;margin:0 10px;text-decoration:none;font-weight:bold; }
+        .dev-only { display:inline-block;background:#FFD700;padding:5px 10px;border-radius:5px;cursor:pointer;}
+        section { padding:20px; }
     </style>
 </head>
 <body>
@@ -110,13 +110,11 @@ def perfil():
 
 @app.route("/frequencia")
 def frequencia():
-    # Exemplo de dados de presença
     df = pd.DataFrame({'Dia':['Seg','Ter','Qua','Qui','Sex'],'Presente':['Sim','Sim','Não','Sim','Sim']})
     total = len(df)
     sim_count = df['Presente'].value_counts().get('Sim',0)
     porcentagem = round(sim_count/total*100,2)
     
-    # Gráfico Pizza
     fig, ax = plt.subplots()
     ax.pie([sim_count, total-sim_count], labels=['Sim','Não'], autopct='%1.1f%%', colors=['#00FF00','#FF0000'])
     img = io.BytesIO()
@@ -204,4 +202,4 @@ def dev():
 # ------------------- EXECUÇÃO -------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT",10000))
-    app.run(host="0.0.0.0", port=port, debug=True)       
+    app.run(host="0.0.0.0", port=port, debug=True)
