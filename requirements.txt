@@ -1,6 +1,2 @@
-Flask
-gunicorn
-requests
-pandas
+Flask>=2.2.5
 matplotlib
-PySide6
