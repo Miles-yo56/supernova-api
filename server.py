@@ -203,3 +203,63 @@ def dev():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT",10000))
     app.run(host="0.0.0.0", port=port, debug=True)
+    # ------------------- CALCULADORA -------------------
+calc_html = """
+<h2>Calculadora</h2>
+<form method="post" action="/calc">
+    <input type="text" name="expr" placeholder="Digite a expressão matemática"/>
+    <input type="submit" value="Calcular"/>
+</form>
+{% if resultado is defined %}
+<p>Resultado: {{ resultado }}</p>
+{% endif %}
+"""
+
+@app.route("/calc", methods=["GET","POST"])
+def calc():
+    resultado = None
+    if request.method == "POST":
+        expr = request.form.get("expr")
+        try:
+            resultado = eval(expr)
+        except:
+            resultado = "Erro na expressão!"
+    return render_template_string(calc_html, resultado=resultado)
+
+# ------------------- QR CODE -------------------
+qr_html = """
+<h2>Gerador de QR Code</h2>
+<form method="post" action="/qr">
+    <input type="text" name="dados" placeholder="Digite os dados para QR Code"/>
+    <input type="submit" value="Gerar QR"/>
+</form>
+{% if img_qr is defined %}
+<img src="data:image/png;base64,{{ img_qr }}" width="200"/>
+{% endif %}
+"""
+
+@app.route("/qr", methods=["GET","POST"])
+def qr():
+    img_qr = None
+    if request.method == "POST":
+        dados = request.form.get("dados")
+        qr_img = qrcode.make(dados)
+        buf = io.BytesIO()
+        qr_img.save(buf)
+        buf.seek(0)
+        img_qr = base64.b64encode(buf.getvalue()).decode()
+    return render_template_string(qr_html, img_qr=img_qr)
+
+# ------------------- CULTURA INTERATIVA -------------------
+cultura_html = """
+<h2>Cultura Interativa</h2>
+<ul>
+    <li>YouTube: <iframe width="400" height="225" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe></li>
+    <li>TikTok: <iframe src="https://www.tiktok.com/embed/v2/7071234567890123456" width="400" height="500" frameborder="0" allowfullscreen></iframe></li>
+    <li>Pinterest: <a href="https://www.pinterest.com" target="_blank">Acesse o Pinterest</a></li>
+</ul>
+"""
+
+@app.route("/cultura_interativa")
+def cultura_interativa():
+    return render_template_string(cultura_html)
