@@ -95,3 +95,62 @@ Que ele continue avançando com você, claro que uma hora ou outra vão ter mome
     <li>Redefinir senha</li>
     <li>Aumentar nível do token</li>
 </ul>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Supernova</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { background-color:#1E1E2F; color:#fff; font-family:Arial; text-align:center; padding-top:50px;}
+        input { padding:10px; font-size:16px; }
+        img { width:300px; margin-bottom:20px; border-radius:10px;}
+        a { color:#00BFFF; font-weight:bold; text-decoration:none; }
+        .error { color:red; font-weight:bold; }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('static', filename='images/login.png') }}"/>
+    <h2>Forneça seu token</h2>
+    <form method="post">
+        <input type="text" name="token" placeholder="Insira seu token"/><br><br>
+        <input type="submit" value="Entrar"/>
+    </form>
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+    <p>Não encontrou o que precisava? <a href="mailto:gabrielsantosprodrigues85@gmail.com">Contate o Dev</a></p>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home Supernova</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { background-color:#121212;color:#fff;font-family:Arial;margin:0;padding:20px;}
+        h2 { margin-top:20px; font-family:Times; }
+        p { font-style:italic; margin-bottom:20px; }
+        u { font-weight:bold; }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('static', filename='images/home.jpg') }}" width="500"/>
+    
+    <h2>Qual foi a inspiração do projeto</h2>
+    <p>
+        Não foi uma escolha guiada por individualismo, foi pensando nos estudantes que querem ser um 
+        <u style='color:green'>diferencial</u> e que gostariam de aperfeiçoar-se constantemente e não ficarem para trás.
+    </p>
+    
+    <h2>Por que de tantos sites, o seu seria diferente?</h2>
+    <p>
+        Porque o que faz um site <u style='color:purple'>diferente</u> são as pessoas que neles vivem, num site tudo é 
+        <u style='color:green'>orgânico</u>, assim como o corpo <u style='color:red'>humano</u>.
+    </p>
+    
+    <h2>O que você espera desse projeto?</h2>
+    <p>
+        Que ele continue avançando com você, claro que uma hora ou outra vão ter momentos em que eu vou querer desistir desse site, mas se fui persistente até aqui, consigo ir mais longe. (Risos)
+    </p>
+</body>
+</html>
