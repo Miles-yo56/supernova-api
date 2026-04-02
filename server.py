@@ -1,260 +1,255 @@
 from flask import Flask, render_template_string, request, redirect, url_for, session, jsonify
 import os
-from datetime import datetime
-import matplotlib.pyplot as plt
-import io
-import base64
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = "supernova_secret_key_123"
+app.secret_key = "supernova_secret_key"
 
-# Tokens válidos
+# --------------------
+# TOKENS E PERFIS
+# --------------------
 TOKENS = {
-    "Matlabinc.67": "dev",
-    "Blinkinc.92": "student",
-    "Ckjson90": "school"
+    "Matlabinc.67": "Dev",
+    "Blinkinc.92": "Estudante",
+    "Ckjson90": "Escola"
+}
+DEV_USERNAME = "Matlabinc.67"
+MAX_ATTEMPTS = 3
+attempts = {}
+
+# --------------------
+# DADOS EXEMPLO
+# --------------------
+students_data = {
+    "Blinkinc.92": {
+        "nome": "Gabriel",
+        "email": "gabrielsantosprodrigues85@gmail.com",
+        "foto": "https://i.pinimg.com/236x/23/Lz/4A/23Lz4AGye.jpg",
+        "frequencia": 78,
+        "horario_aulas": "08:00-12:00",
+        "pe_de_meia": {"proximo_pagamento": "10/04/2026", "valor": 150}
+    },
+    "Ckjson90": {
+        "nome": "Escola Modelo",
+        "email": "contato@escolamodelo.com",
+        "foto": "https://i.pinimg.com/236x/00/aa/bb/00aabbcc.jpg",
+        "frequencia": 100,
+        "horario_aulas": "07:00-13:00",
+        "pe_de_meia": {"proximo_pagamento": "05/04/2026", "valor": 5000}
+    }
 }
 
-# Usuário Dev exclusivo
-DEV_CREDENTIAL = "Sparta654.Mp"
-
-# Dados de exemplo do perfil
-PROFILES = {
-    "dev": {"nome": "Gabriel", "email": "gabrielsantosprodrigues85@gmail.com", "foto": "https://i.pinimg.com/236x/23/Lz/4A/23Lz4AGye.jpg"},
-    "student": {"nome": "Aluno Teste", "email": "aluno@escola.com", "foto": "https://i.pinimg.com/236x/23/Lz/4A/23Lz4AGye.jpg"},
-    "school": {"nome": "Escola XYZ", "email": "contato@escola.com", "foto": "https://i.pinimg.com/236x/23/Lz/4A/23Lz4AGye.jpg"}
-}
-
-# Frequência de exemplo
-FREQUENCIA = {
-    "Matemática": 78,
-    "Português": 82,
-    "Ciências": 74,
-    "História": 85
-}
-
-# Pé de meia exemplo (datas reais da Caixa Econômica)
-PE_DE_MEIA = [
-    {"mês": "Abril 2026", "data_pagamento": "10/04/2026", "valor": 120.00},
-    {"mês": "Maio 2026", "data_pagamento": "10/05/2026", "valor": 120.00},
-    {"mês": "Junho 2026", "data_pagamento": "10/06/2026", "valor": 120.00},
+olimpiadas = ["OBMEP", "OBA", "OBF"]
+recomendacoes = [
+    {"nome":"Canal Tec Mundo", "link":"https://www.youtube.com/@TecMundo"},
+    {"nome":"Canal Ciência Todo Dia", "link":"https://www.youtube.com/@CienciaTodoDia"},
+    {"nome":"Canal Matemática no Papel", "link":"https://www.youtube.com/@MatematicaNoPapel"}
+]
+links_uteis = [
+    {"nome":"Pinterest", "link":"https://www.pinterest.com/"},
+    {"nome":"ChatGPT", "link":"https://chat.openai.com/"},
+    {"nome":"Gemini AI", "link":"https://gemini.ai/"},
+    {"nome":"Claude AI", "link":"https://claude.ai/"}
 ]
 
-# Template principal
-LOGIN_TEMPLATE = """
+# --------------------
+# TEMPLATES
+# --------------------
+LOGIN_PAGE = '''
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Supernova API Login</title>
-<style>
-body {{ font-family: Arial; text-align: center; background-color: #f0f8ff; }}
-.container {{ margin-top: 50px; }}
-img {{ max-width: 300px; border-radius: 15px; }}
-input {{ padding: 10px; margin: 10px; font-size: 16px; }}
-button {{ padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #007BFF; color: white; border: none; border-radius: 5px; }}
-.alert {{ color: red; font-weight: bold; }}
-</style>
+    <title>Login Supernova</title>
+    <style>
+        body {{ text-align:center; font-family:sans-serif; background:#1e1e2f; color:white; }}
+        img {{ width:200px; margin-top:30px; }}
+        input, button {{ font-size:16px; padding:5px; margin:5px; }}
+    </style>
 </head>
 <body>
-<div class="container">
-<h1>Tela de Login</h1>
-<img src="https://pin.it/2VxPkKbED" alt="Token Image">
-<form method="post">
-<br>
-<input type="text" name="token" placeholder="Forneça seu token">
-<br>
-<button type="submit">Entrar</button>
-</form>
-{% if error %}
-<p class="alert">{{ error }}</p>
-{% endif %}
-</div>
+    <h1>Tela de login</h1>
+    <img src="https://i.pinimg.com/564x/4c/32/ab/4c32ab7e6ea5a234f7b2d1c9c42e1a3a.jpg" alt="Supernova">
+    <form method="post">
+        <input type="text" name="token" placeholder="Forneça seu token" required>
+        <button type="submit">Entrar</button>
+    </form>
+    {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
 </body>
 </html>
-"""
+'''
 
-HOME_TEMPLATE = """
+DASHBOARD_PAGE = '''
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Supernova API - {{ user_role }}</title>
-<style>
-body {{ font-family: Arial; background-color: #e6f7ff; }}
-header {{ background-color: #007BFF; color: white; padding: 15px; text-align: center; font-size: 24px; }}
-nav {{ margin: 10px; }}
-nav a {{ margin: 0 10px; color: #007BFF; text-decoration: none; font-weight: bold; }}
-section {{ padding: 20px; }}
-img {{ width: 100px; border-radius: 50%; }}
-.alert {{ color: red; font-weight: bold; }}
-</style>
+    <title>Supernova Dashboard</title>
+    <style>
+        body {{ font-family:sans-serif; background:#121212; color:white; }}
+        .tab {{ padding:10px; margin:5px; display:inline-block; background:#2e2e4e; cursor:pointer; }}
+        .active {{ background:#4e4ebf; }}
+        .section {{ display:none; padding:20px; }}
+        .visible {{ display:block; }}
+        .dev-button {{ background:orange; color:black; padding:5px; cursor:pointer; }}
+    </style>
+    <script>
+        function showTab(tabName){{
+            let sections = document.querySelectorAll('.section');
+            sections.forEach(s => s.classList.remove('visible'));
+            document.getElementById(tabName).classList.add('visible');
+        }}
+    </script>
 </head>
 <body>
-<header>Supernova API - {{ user_role }}</header>
-<nav>
-<a href="{{ url_for('home_page') }}">Perfil</a>
-<a href="{{ url_for('frequencia') }}">Frequência</a>
-<a href="{{ url_for('pe_de_meia') }}">Pé de Meia</a>
-<a href="{{ url_for('calculadora') }}">Calculadora</a>
-<a href="{{ url_for('olimpico') }}">Olímpico</a>
-<a href="{{ url_for('cultura') }}">Cultura</a>
-<a href="{{ url_for('atualizar_credenciais') }}">Atualizar Credenciais</a>
-<a href="{{ url_for('links_uteis') }}">Links Úteis</a>
-<a href="{{ url_for('sobre') }}">Sobre Nós</a>
-<a href="{{ url_for('faq') }}">FAQ</a>
-<a href="{{ url_for('reclamacoes') }}">Reclamações/Sugestões</a>
-{% if user_role == 'dev' %}
-<a href="{{ url_for('liberar') }}">Liberar</a>
-{% endif %}
-</nav>
-<section>
-<h2>Perfil do Usuário</h2>
-<img src="{{ profile.foto }}" alt="Foto">
-<p><strong>Nome:</strong> {{ profile.nome }}</p>
-<p><strong>Email:</strong> {{ profile.email }}</p>
-<p><strong>Data e Hora:</strong> {{ datetime_now }}</p>
-</section>
+    <h1>Bem-vindo {{ user }}</h1>
+    <img src="{{ foto }}" width="100">
+    <p>Email: {{ email }}</p>
+    <p>Data e hora: {{ now }}</p>
+    
+    <div>
+        <span class="tab active" onclick="showTab('perfil')">Perfil</span>
+        <span class="tab" onclick="showTab('frequencia')">Frequência</span>
+        <span class="tab" onclick="showTab('pe_meia')">Pé de Meia</span>
+        <span class="tab" onclick="showTab('olimpico')">Olimpíadas</span>
+        <span class="tab" onclick="showTab('recomendacoes')">Recomendações</span>
+        <span class="tab" onclick="showTab('links')">Links Úteis</span>
+        <span class="tab" onclick="showTab('cultura')">Cultura</span>
+        <span class="tab" onclick="showTab('faq')">FAQ</span>
+        {% if user_type == 'Dev' %}
+        <span class="tab" onclick="showTab('liberar')">Liberar</span>
+        <span class="tab" onclick="showTab('atualizar')">Atualizar Credenciais</span>
+        {% endif %}
+    </div>
+    
+    <div id="perfil" class="section visible">
+        <h2>Perfil</h2>
+        <p>Nome: {{ user }}</p>
+        <p>Email: {{ email }}</p>
+        <img src="{{ foto }}" width="150">
+    </div>
+    
+    <div id="frequencia" class="section">
+        <h2>Frequência</h2>
+        <p>{{ frequencia }}%</p>
+        {% if frequencia < 80 %}<p style="color:yellow">Alerta: Atingindo limite mínimo!</p>{% endif %}
+        <p>Horário aulas: {{ horario_aulas }}</p>
+    </div>
+    
+    <div id="pe_meia" class="section">
+        <h2>Pé de Meia</h2>
+        <p>Próximo pagamento: {{ pe_meia['proximo_pagamento'] }}</p>
+        <p>Valor: R$ {{ pe_meia['valor'] }}</p>
+    </div>
+    
+    <div id="olimpico" class="section">
+        <h2>Olimpíadas</h2>
+        <ul>{% for o in olimpias %}<li>{{ o }}</li>{% endfor %}</ul>
+        {% if user_type == 'Dev' %}
+        <button class="dev-button" onclick="alert('Adicionar nova olimpíada')">+</button>
+        {% endif %}
+    </div>
+    
+    <div id="recomendacoes" class="section">
+        <h2>Recomendações</h2>
+        <ul>{% for r in recomendacoes %}<li><a href="{{ r.link }}" target="_blank">{{ r.nome }}</a></li>{% endfor %}</ul>
+    </div>
+    
+    <div id="links" class="section">
+        <h2>Links Úteis</h2>
+        <ul>{% for l in links_uteis %}<li><a href="{{ l.link }}" target="_blank">{{ l.nome }}</a></li>{% endfor %}</ul>
+    </div>
+    
+    <div id="cultura" class="section">
+        <h2>Cultura</h2>
+        <p>Integração com YouTube, Pinterest e IA</p>
+    </div>
+    
+    <div id="faq" class="section">
+        <h2>FAQ</h2>
+        <p>Perguntas frequentes aqui</p>
+    </div>
+    
+    {% if user_type == 'Dev' %}
+    <div id="liberar" class="section">
+        <h2>Função Liberar</h2>
+        <form method="post" action="/liberar">
+            <input type="text" name="usuario_liberar" placeholder="Usuário">
+            <button type="submit">Liberar</button>
+        </form>
+    </div>
+    <div id="atualizar" class="section">
+        <h2>Atualizar Credenciais</h2>
+        <p>Função Dev para atualizar credenciais de usuários</p>
+    </div>
+    {% endif %}
 </body>
 </html>
-"""
+'''
 
-@app.route("/", methods=["GET", "POST"])
+# --------------------
+# ROTAS
+# --------------------
+@app.route("/", methods=["GET","POST"])
 def login():
     error = None
     if request.method == "POST":
         token = request.form.get("token")
-        role = TOKENS.get(token)
-        if role:
-            session["user_role"] = role
-            session["token"] = token
-            return redirect(url_for("home_page"))
+        user_type = TOKENS.get(token)
+        
+        # Tentativas
+        global attempts
+        if token not in attempts:
+            attempts[token] = 0
+        attempts[token] += 1
+        if attempts[token] > MAX_ATTEMPTS:
+            return f"Você ultrapassou o limite diário. Tente novamente em 24h."
+        
+        if user_type:
+            session['user'] = token
+            session['user_type'] = user_type
+            return redirect(url_for("dashboard"))
         else:
-            error = "Token inválido ou limite de tentativas excedido."
-    return render_template_string(LOGIN_TEMPLATE, error=error)
+            error = "Token inválido"
+    return render_template_string(LOGIN_PAGE, error=error)
 
-@app.route("/home")
-def home_page():
-    if "user_role" not in session:
+@app.route("/dashboard")
+def dashboard():
+    user = session.get("user")
+    user_type = session.get("user_type")
+    if not user:
         return redirect(url_for("login"))
-    user_role = session["user_role"]
-    profile = PROFILES[user_role]
-    datetime_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    return render_template_string(HOME_TEMPLATE, user_role=user_role, profile=profile, datetime_now=datetime_now)
+    
+    data = students_data.get(user, {
+        "nome":user,"email":"-","foto":"https://i.pinimg.com/236x/23/Lz/4A/23Lz4AGye.jpg",
+        "frequencia":0, "horario_aulas":"-","pe_de_meia":{"proximo_pagamento":"-","valor":0}})
+    
+    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    
+    return render_template_string(DASHBOARD_PAGE,
+                                  user=user,
+                                  user_type=user_type,
+                                  foto=data['foto'],
+                                  email=data['email'],
+                                  frequencia=data['frequencia'],
+                                  horario_aulas=data['horario_aulas'],
+                                  pe_meia=data['pe_de_meia'],
+                               olimpias=olimpiadas,
+                                  recomendacoes=recomendacoes,
+                                  links_uteis=links_uteis,
+                                  now=now)
 
-# Frequência
-@app.route("/frequencia")
-def frequencia():
-    alerta = any(v < 80 for v in FREQUENCIA.values())
-    return jsonify({"frequencia": FREQUENCIA, "alerta": alerta})
-
-# Pé de meia
-@app.route("/pe_de_meia")
-def pe_de_meia():
-    return jsonify({"pe_de_meia": PE_DE_MEIA})
-
-# Calculadora simples
-@app.route("/calculadora/<float:a>/<float:b>/<oper>")
-def calculadora(a, b, oper):
-    if oper == "soma":
-        return jsonify({"resultado": a+b})
-    elif oper == "sub":
-        return jsonify({"resultado": a-b})
-    elif oper == "mult":
-        return jsonify({"resultado": a*b})
-    elif oper == "div":
-        if b == 0:
-            return jsonify({"erro": "Divisão por zero"})
-        return jsonify({"resultado": a/b})
-    return jsonify({"erro": "Operação inválida"})
-
-# Olímpico
-@app.route("/olimpico")
-def olimpico():
-    return jsonify({"mensagem": "Aba Olímpico em construção"})
-
-# Cultura
-@app.route("/cultura")
-def cultura():
-    return jsonify({
-        "youtube": ["https://youtube.com"],
-        "pinterest": ["https://pinterest.com"],
-        "chatgpt": ["https://chat.openai.com/"]
-    })
-
-# Atualizar credenciais
-@app.route("/atualizar_credenciais")
-def atualizar_credenciais():
-    return jsonify({"mensagem": "Atualizar Credenciais disponível apenas para Dev"})
-
-# Links úteis
-@app.route("/links_uteis")
-def links_uteis():
-    return jsonify({
-        "tec_mundo": "https://www.tecmundo.com.br/",
-        "ciencia_todo_dia": "https://www.youtube.com/@CienciaTodoDia",
-        "matematica_no_papel": "https://www.youtube.com/@MatematicaNoPapel"
-    })
-
-# Sobre nós
-@app.route("/sobre")
-def sobre():
-    return jsonify({"mensagem": "Sobre a Supernova API, equipe de desenvolvimento, missão e visão"})
-
-# FAQ
-@app.route("/faq")
-def faq():
-    return jsonify({"mensagem": "Perguntas Frequentes"})
-
-# Reclamações/Sugestões
-@app.route("/reclamacoes")
-def reclamacoes():
-    return jsonify({"mensagem": "Envie suas sugestões ou reclamações para o Dev"})
-
-# Liberar funções (Dev apenas)
-@app.route("/liberar")
+@app.route("/liberar", methods=["POST"])
 def liberar():
-    if session.get("user_role") == "dev":
-        return jsonify({"mensagem": "Funções desbloqueadas"})
-    return jsonify({"erro": "Acesso negado"}), 403
+    if session.get("user_type") != "Dev":
+        return "Acesso negado"
+    usuario = request.form.get("usuario_liberar")
+    if usuario in students_data:
+        return f"Acesso liberado para {usuario}"
+    else:
+        return f"Usuário {usuario} não encontrado"
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port, debug=True)                font-size: 16px; 
-            }
-            button { 
-                cursor: pointer; 
-                background-color: #ff5722; 
-                color: white; 
-                border: none; 
-                border-radius: 5px; 
-            }
-            img { 
-                width: 200px; 
-                margin-bottom: 20px; 
-                border-radius: 10px;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>Tela de Login - Forneça seu token</h1>
-        <img src="https://pin.it/2VxPkKbED" alt="Supernova Logo">
-        <form method="POST">
-            <input type="text" name="token" placeholder="Digite seu token" required>
-            <br>
-            <button type="submit">Entrar</button>
-        </form>
-        <p>Não encontrou o que precisava? Contate: gabrielsantosprodrigues85@gmail.com</p>
-    </body>
-    </html>
-    """)
-
-# Página principal após login
-@app.route("/home")
-def home():
-    perfil = request.args.get("perfil", "Visitante")
-    return f"<h2>Bem-vindo(a), {perfil}! Supernova API Online 🚀</h2>"
-
+# --------------------
+# EXECUÇÃO
+# --------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=True)
