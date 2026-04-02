@@ -1,205 +1,98 @@
-login.html
-HTML
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Login - Supernova API</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
-body {
-    background-image: url('{{ imagem_url }}');
-    background-size: cover;
-    background-position: center;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.card {
-    background-color: rgba(255,255,255,0.9);
-    padding: 30px;
-    border-radius: 12px;
-    max-width: 400px;
-    width: 100%;
-}
-</style>
+    <title>Login Supernova</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-<div class="card">
-    <h3 class="text-center mb-3">Tela de Login</h3>
-    {% if erro %}
-    <div class="alert alert-danger">{{ erro }}</div>
+    <img src="{{ url_for('static', filename='images/login_bg.jpg') }}" />
+    <h2>Forneça seu token</h2>
+    <form method="post">
+        <input type="text" name="token" placeholder="Insira seu token"/><br><br>
+        <input type="submit" value="Entrar"/>
+    </form>
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
     {% endif %}
-    <form method="POST">
-        <div class="mb-3">
-            <label for="token" class="form-label">Forneça seu token</label>
-            <input type="text" class="form-control" id="token" name="token" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Entrar</button>
-    </form>
-</div>
+    <p>Não encontrou o que precisava? <a href="mailto:gabrielsantosprodrigues85@gmail.com">Contate o Dev</a></p>
 </body>
 </html>
-limite.html
-HTML
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Limite de Tentativas</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Supernova Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="d-flex justify-content-center align-items-center vh-100">
-<div class="text-center">
-    <h2>Você ultrapassou o limite de tentativas diárias!</h2>
-    <p>Tente novamente em 24 horas.</p>
-    <a href="/" class="btn btn-warning mt-3">Voltar</a>
-</div>
-</body>
-</html>
-dashboard.html
-HTML
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard - {{ perfil }}</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-body { background-color: #f0f8ff; }
-.nav-link.active { font-weight: bold; color: #0d6efd !important; }
-.tab-content { padding: 20px; background-color: #fff; border-radius: 12px; margin-top: 10px; }
-</style>
-</head>
-<body class="p-3">
-<div class="container">
-    <h2 class="mb-3">Bem-vindo, {{ perfil }}!</h2>
-    <p>Data: {{ data }} | Hora: {{ hora }}</p>
-
-    <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="pe-de-meia-tab" data-bs-toggle="tab" data-bs-target="#pe-de-meia" type="button">Pé de Meia</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="frequencia-tab" data-bs-toggle="tab" data-bs-target="#frequencia" type="button">Frequência</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="cultura-tab" data-bs-toggle="tab" data-bs-target="#cultura" type="button">Cultura</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button">Links úteis</button>
-        </li>
-        {% if perfil == "Dev" %}
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="liberar-tab" data-bs-toggle="tab" data-bs-target="#liberar" type="button">Liberar</button>
-        </li>
+<body>
+    <header>Supernova Space - {{ role }}</header>
+    <nav>
+        <a href="{{ url_for('home', token=token) }}">Home</a>
+        <a href="{{ url_for('perfil', token=token) }}">Perfil</a>
+        <a href="{{ url_for('frequencia', token=token) }}">Frequência</a>
+        <a href="{{ url_for('pe_de_meia', token=token) }}">Pé de Meia</a>
+        <a href="{{ url_for('olimpico', token=token) }}">Olimpíadas</a>
+        <a href="{{ url_for('cultura', token=token) }}">Cultura</a>
+        {% if role.startswith("Dev") %}
+            <a href="{{ url_for('dev', token=token) }}" class="dev-only">Dev</a>
         {% endif %}
-    </ul>
-
-    <div class="tab-content">
-        <!-- Pé de Meia -->
-        <div class="tab-pane fade show active" id="pe-de-meia">
-            <h4>Pé de Meia</h4>
-            <table class="table table-striped">
-                <thead>
-                    <tr><th>Mês</th><th>Valor</th><th>Data Pagamento</th></tr>
-                </thead>
-                <tbody>
-                    {% for item in pe_de_meia %}
-                    <tr><td>{{ item.mes }}</td><td>R$ {{ item.valor }}</td><td>{{ item.data_pagamento }}</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Frequência -->
-        <div class="tab-pane fade" id="frequencia">
-            <h4>Frequência</h4>
-            <canvas id="frequenciaChart" width="400" height="200"></canvas>
-        </div>
-
-        <!-- Cultura -->
-        <div class="tab-pane fade" id="cultura">
-            <h4>Cultura</h4>
-            <ul>
-                <li><a href="https://www.youtube.com/c/TecMundo" target="_blank">Canal Tec Mundo</a></li>
-                <li><a href="https://www.youtube.com/c/CienciaTodoDia" target="_blank">Ciência Todo Dia</a></li>
-                <li><a href="https://www.youtube.com/c/MatematicaNoPapel" target="_blank">Matemática no Papel</a></li>
-                <li><a href="https://www.pinterest.com/" target="_blank">Pinterest</a></li>
-            </ul>
-        </div>
-
-        <!-- Links úteis -->
-        <div class="tab-pane fade" id="links">
-            <h4>Links úteis</h4>
-            <ul>
-                {% for link in links %}
-                <li><a href="{{ link.url }}" target="_blank">{{ link.nome }}</a></li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <!-- Liberar (apenas Dev) -->
-        {% if perfil == "Dev" %}
-        <div class="tab-pane fade" id="liberar">
-            <h4>Liberar Usuário</h4>
-            <form method="POST" action="/liberar">
-                <div class="mb-3">
-                    <label for="usuario" class="form-label">Nome do Usuário</label>
-                    <input type="text" class="form-control" id="usuario" name="usuario">
-                </div>
-                <button type="submit" class="btn btn-success">Liberar</button>
-            </form>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-const ctx = document.getElementById('frequenciaChart').getContext('2d');
-const frequenciaChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: ['Português','Matemática','Ciências','Geografia','Artes','Ed. Física','Inglês'],
-        datasets: [{
-            label: 'Frequência (%)',
-            data: [80, 90, 85, 70, 95, 100, 88],
-            backgroundColor: 'rgba(13,110,253,0.7)'
-        }]
-    },
-    options: {
-        scales: { y: { beginAtZero: true, max: 100 } }
-    }
-});
-</script>
+    </nav>
+    <section>
+        <h2>Bem-vindo, {{ role }}!</h2>
+        <p>Escolha uma aba acima para navegar pelas funções do sistema.</p>
+    </section>
 </body>
 </html>
-liberar.html
-HTML
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Liberar Usuário</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="p-3">
-<div class="container">
-    <h2>Liberar Usuário (Dev)</h2>
-    <form method="POST">
-        <div class="mb-3">
-            <label for="usuario" class="form-label">Nome do Usuário</label>
-            <input type="text" class="form-control" id="usuario" name="usuario" required>
-        </div>
-        <button type="submit" class="btn btn-success">Liberar</button>
-    </form>
-</div>
-</body>
-</html>
+<h2>Perfil de {{ role }}</h2>
+<p>Data/Hora: {{ datahora }}</p>
+<img src="{{ foto_url }}" width="150"/>
+<p>Email: gabrielsantosprodrigues85@gmail.com</p>
+
+<form method="post" enctype="multipart/form-data">
+    <label>Alterar foto de perfil:</label>
+    <input type="file" name="foto"/>
+    <input type="submit" value="Atualizar"/>
+</form>
+<h2>Frequência: {{ porcentagem }}%</h2>
+<p>{{ alerta }}</p>
+<img src="data:image/png;base64,{{ plot_url }}">
+<h2>Pé de Meia - Caixa Econômica</h2>
+<ul>
+    <li>Depósito 1: 05/04/2026</li>
+    <li>Depósito 2: 05/05/2026</li>
+    <li>Depósito 3: 05/06/2026</li>
+</ul>
+<h2>Olimpíadas</h2>
+<ul>
+    <li>ONC - Olimpíada Nacional de Ciências</li>
+    <li>OBA - Olimpíada Brasileira de Astronomia</li>
+    <li>OBMEP - Olimpíada Brasileira de Matemática</li>
+    <li>Canguru - Olimpíada Internacional de Matemática</li>
+</ul>
+<h2>Cultura e Integrações</h2>
+<ul>
+    <li><a href="https://www.youtube.com">YouTube</a> - Vídeos integrados</li>
+    <li><a href="https://www.tiktok.com">TikTok</a></li>
+    <li><a href="https://www.google.com/chrome/">Google Chrome</a></li>
+</ul>
+<img src="{{ url_for('static', filename='images/home_img.png') }}" width="500"/>
+<h2 style="font-family:Times;">Qual foi a inspiração do projeto</h2>
+<p style="font-style:italic;">Não foi uma escolha guiada por individualismo, foi pensando nos estudantes que querem ser um <u style='color:green'>diferencial</u> e que gostariam de aperfeiçoar-se constantemente e não ficarem para trás.</p>
+
+<h2 style="font-family:Times;">Por que de tantos sites, o seu seria diferente?</h2>
+<p style="font-style:italic;">Porque o que faz um site <u style='color:purple'>diferente</u> são as pessoas que neles vivem, num site tudo é <u style='color:green'>orgânico</u>, assim como o corpo <u style='color:red'>humano</u>.</p>
+
+<h2 style="font-family:Times;">O que você espera desse projeto?</h2>
+<p style="font-style:italic;">Que ele continue avançando com você, claro que uma hora ou outra vão ter momentos em que eu vou querer desistir desse site, mas se fui persistente até aqui, consigo ir mais longe. (Risos)</p>
+<h2>Área do Dev</h2>
+<ul>
+    <li>Liberar acesso</li>
+    <li>Monitorar tráfego</li>
+    <li>Visitantes Online/Offline</li>
+    <li>Adicionar nova opção</li>
+    <li>Desativar perfil User</li>
+    <li>Atualizar dados cadastrais</li>
+    <li>Integrar I.A</li>
+    <li>PPC - Palavras-chave de pesquisa do usuário</li>
+    <li>Redefinir senha</li>
+    <li>Aumentar nível do token</li>
+</ul>
