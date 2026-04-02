@@ -5,14 +5,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <img src="{{ url_for('static', filename='images/login_bg.jpg') }}" />
+    <img src="{{ url_for('static', filename='images/login.png') }}"/>
     <h2>Forneça seu token</h2>
     <form method="post">
         <input type="text" name="token" placeholder="Insira seu token"/><br><br>
         <input type="submit" value="Entrar"/>
     </form>
     {% if error %}
-        <p style="color:red;">{{ error }}</p>
+        <p class="error">{{ error }}</p>
     {% endif %}
     <p>Não encontrou o que precisava? <a href="mailto:gabrielsantosprodrigues85@gmail.com">Contate o Dev</a></p>
 </body>
@@ -24,34 +24,29 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <header>Supernova Space - {{ role }}</header>
-    <nav>
-        <a href="{{ url_for('home', token=token) }}">Home</a>
-        <a href="{{ url_for('perfil', token=token) }}">Perfil</a>
-        <a href="{{ url_for('frequencia', token=token) }}">Frequência</a>
-        <a href="{{ url_for('pe_de_meia', token=token) }}">Pé de Meia</a>
-        <a href="{{ url_for('olimpico', token=token) }}">Olimpíadas</a>
-        <a href="{{ url_for('cultura', token=token) }}">Cultura</a>
-        {% if role.startswith("Dev") %}
-            <a href="{{ url_for('dev', token=token) }}" class="dev-only">Dev</a>
-        {% endif %}
-    </nav>
-    <section>
-        <h2>Bem-vindo, {{ role }}!</h2>
-        <p>Escolha uma aba acima para navegar pelas funções do sistema.</p>
-    </section>
+<header>Supernova Space - {{ role }}</header>
+<nav>
+    <a href="{{ url_for('home', token=token) }}">Home</a>
+    <a href="{{ url_for('perfil', token=token) }}">Perfil</a>
+    <a href="{{ url_for('frequencia', token=token) }}">Frequência</a>
+    <a href="{{ url_for('pe_de_meia', token=token) }}">Pé de Meia</a>
+    <a href="{{ url_for('olimpico', token=token) }}">Olimpíadas</a>
+    <a href="{{ url_for('cultura', token=token) }}">Cultura</a>
+    {% if role.startswith("Dev") %}
+        <span class="dev-only"><a href="{{ url_for('dev', token=token) }}">Dev</a></span>
+    {% endif %}
+</nav>
+<section>
+    <h2>Bem-vindo, {{ role }}!</h2>
+    <p>Escolha uma aba acima para navegar pelas funções do sistema.</p>
+</section>
 </body>
 </html>
 <h2>Perfil de {{ role }}</h2>
-<p>Data/Hora: {{ datahora }}</p>
-<img src="{{ foto_url }}" width="150"/>
+<p>Data/Hora: {{ now.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+<p>Foto de Perfil: <img src="{{ url_for('static', filename='images/perfil.png') }}" width='150'></p>
 <p>Email: gabrielsantosprodrigues85@gmail.com</p>
-
-<form method="post" enctype="multipart/form-data">
-    <label>Alterar foto de perfil:</label>
-    <input type="file" name="foto"/>
-    <input type="submit" value="Atualizar"/>
-</form>
+<p>Funcionalidades customizáveis: adicionar fotos PNG/JPEG</p>
 <h2>Frequência: {{ porcentagem }}%</h2>
 <p>{{ alerta }}</p>
 <img src="data:image/png;base64,{{ plot_url }}">
@@ -74,15 +69,19 @@
     <li><a href="https://www.tiktok.com">TikTok</a></li>
     <li><a href="https://www.google.com/chrome/">Google Chrome</a></li>
 </ul>
-<img src="{{ url_for('static', filename='images/home_img.png') }}" width="500"/>
+<img src="{{ url_for('static', filename='images/home.jpg') }}" width="500"/>
 <h2 style="font-family:Times;">Qual foi a inspiração do projeto</h2>
-<p style="font-style:italic;">Não foi uma escolha guiada por individualismo, foi pensando nos estudantes que querem ser um <u style='color:green'>diferencial</u> e que gostariam de aperfeiçoar-se constantemente e não ficarem para trás.</p>
-
+<p style="font-style:italic;">
+Não foi uma escolha guiada por individualismo, foi pensando nos estudantes que querem ser um <u style='color:green'>diferencial</u> e que gostariam de aperfeiçoar-se constantemente e não ficarem para trás.
+</p>
 <h2 style="font-family:Times;">Por que de tantos sites, o seu seria diferente?</h2>
-<p style="font-style:italic;">Porque o que faz um site <u style='color:purple'>diferente</u> são as pessoas que neles vivem, num site tudo é <u style='color:green'>orgânico</u>, assim como o corpo <u style='color:red'>humano</u>.</p>
-
+<p style="font-style:italic;">
+Porque o que faz um site <u style='color:purple'>diferente</u> são as pessoas que neles vivem, num site tudo é <u style='color:green'>orgânico</u>, assim como o corpo <u style='color:red'>humano</u>.
+</p>
 <h2 style="font-family:Times;">O que você espera desse projeto?</h2>
-<p style="font-style:italic;">Que ele continue avançando com você, claro que uma hora ou outra vão ter momentos em que eu vou querer desistir desse site, mas se fui persistente até aqui, consigo ir mais longe. (Risos)</p>
+<p style="font-style:italic;">
+Que ele continue avançando com você, claro que uma hora ou outra vão ter momentos em que eu vou querer desistir desse site, mas se fui persistente até aqui, consigo ir mais longe. (Risos)
+</p>
 <h2>Área do Dev</h2>
 <ul>
     <li>Liberar acesso</li>
