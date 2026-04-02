@@ -24,10 +24,10 @@ login_html = """
 <head>
     <title>Login Supernova</title>
     <style>
-        body { background-color:#1E1E2F; color:#fff; font-family:Arial; text-align:center; padding-top:50px;}
-        input { padding:10px; font-size:16px; }
-        img { width:300px; margin-bottom:20px; border-radius:10px;}
-        a { color:#00BFFF; font-weight:bold; text-decoration:none; }
+    body { background-color:#1E1E2F; color:#fff; font-family:Arial; text-align:center; padding-top:50px;}
+    input { padding:10px; font-size:16px; }
+    img { width:300px; margin-bottom:20px; border-radius:10px;}
+    a { color:#00BFFF; font-weight:bold; text-decoration:none; }
     </style>
 </head>
 <body>
@@ -52,12 +52,12 @@ dashboard_html = """
 <head>
     <title>Supernova Dashboard</title>
     <style>
-        body { background-color:#121212;color:#fff;font-family:Arial;margin:0;padding:0;}
-        header { background:#1E90FF;padding:15px;text-align:center;font-size:24px; }
-        nav { background:#282828;padding:10px; }
-        nav a { color:#00BFFF;margin:0 10px;text-decoration:none;font-weight:bold; }
-        .dev-only { display:inline-block;background:#FFD700;padding:5px 10px;border-radius:5px;cursor:pointer;}
-        section { padding:20px; }
+    body { background-color:#121212;color:#fff;font-family:Arial;margin:0;padding:0;}
+    header { background:#1E90FF;padding:15px;text-align:center;font-size:24px; }
+    nav { background:#282828;padding:10px; }
+    nav a { color:#00BFFF;margin:0 10px;text-decoration:none;font-weight:bold; }
+    .dev-only { display:inline-block;background:#FFD700;padding:5px 10px;border-radius:5px;cursor:pointer;}
+    section { padding:20px; }
     </style>
 </head>
 <body>
@@ -69,6 +69,8 @@ dashboard_html = """
         <a href="/pe-de-meia?token={{ token }}">Pé de Meia</a>
         <a href="/olimpico?token={{ token }}">Olimpíadas</a>
         <a href="/cultura?token={{ token }}">Cultura</a>
+        <a href="/calculadora?token={{ token }}">Calculadora</a>
+        <a href="/qr?token={{ token }}">QR Code</a>
         {% if role.startswith("Dev") %}
             <span class="dev-only"><a href="/dev?token={{ token }}">Dev</a></span>
         {% endif %}
@@ -82,7 +84,6 @@ dashboard_html = """
 """
 
 # ------------------- ROTAS -------------------
-
 @app.route("/", methods=["GET","POST"])
 def login():
     error = None
@@ -114,14 +115,12 @@ def frequencia():
     total = len(df)
     sim_count = df['Presente'].value_counts().get('Sim',0)
     porcentagem = round(sim_count/total*100,2)
-    
     fig, ax = plt.subplots()
     ax.pie([sim_count, total-sim_count], labels=['Sim','Não'], autopct='%1.1f%%', colors=['#00FF00','#FF0000'])
     img = io.BytesIO()
     plt.savefig(img, format='png', bbox_inches="tight")
     img.seek(0)
     plot_url = base64.b64encode(img.getvalue()).decode()
-    
     alerta = "Atenção! Frequência abaixo de 80%" if porcentagem < 80 else "Frequência ok"
     return f"""
     <h2>Frequência: {porcentagem}%</h2>
@@ -199,67 +198,28 @@ def dev():
     </ul>
     """
 
+@app.route("/calculadora")
+def calculadora():
+    return """
+    <h2>Calculadora Simples</h2>
+    <form oninput="res.value=parseFloat(a.value)+parseFloat(b.value)">
+        <input type="number" name="a" value="0"> + 
+        <input type="number" name="b" value="0"> =
+        <output name="res" for="a b">0</output>
+    </form>
+    """
+
+@app.route("/qr")
+def qr():
+    data = "https://supernova.example.com"
+    qr_img = qrcode.make(data)
+    img_buf = io.BytesIO()
+    qr_img.save(img_buf, format="PNG")
+    img_buf.seek(0)
+    img_b64 = base64.b64encode(img_buf.getvalue()).decode()
+    return f"<h2>QR Code</h2><img src='data:image/png;base64,{img_b64}'>"
+
 # ------------------- EXECUÇÃO -------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT",10000))
     app.run(host="0.0.0.0", port=port, debug=True)
-    # ------------------- CALCULADORA -------------------
-calc_html = """
-<h2>Calculadora</h2>
-<form method="post" action="/calc">
-    <input type="text" name="expr" placeholder="Digite a expressão matemática"/>
-    <input type="submit" value="Calcular"/>
-</form>
-{% if resultado is defined %}
-<p>Resultado: {{ resultado }}</p>
-{% endif %}
-"""
-
-@app.route("/calc", methods=["GET","POST"])
-def calc():
-    resultado = None
-    if request.method == "POST":
-        expr = request.form.get("expr")
-        try:
-            resultado = eval(expr)
-        except:
-            resultado = "Erro na expressão!"
-    return render_template_string(calc_html, resultado=resultado)
-
-# ------------------- QR CODE -------------------
-qr_html = """
-<h2>Gerador de QR Code</h2>
-<form method="post" action="/qr">
-    <input type="text" name="dados" placeholder="Digite os dados para QR Code"/>
-    <input type="submit" value="Gerar QR"/>
-</form>
-{% if img_qr is defined %}
-<img src="data:image/png;base64,{{ img_qr }}" width="200"/>
-{% endif %}
-"""
-
-@app.route("/qr", methods=["GET","POST"])
-def qr():
-    img_qr = None
-    if request.method == "POST":
-        dados = request.form.get("dados")
-        qr_img = qrcode.make(dados)
-        buf = io.BytesIO()
-        qr_img.save(buf)
-        buf.seek(0)
-        img_qr = base64.b64encode(buf.getvalue()).decode()
-    return render_template_string(qr_html, img_qr=img_qr)
-
-# ------------------- CULTURA INTERATIVA -------------------
-cultura_html = """
-<h2>Cultura Interativa</h2>
-<ul>
-    <li>YouTube: <iframe width="400" height="225" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe></li>
-    <li>TikTok: <iframe src="https://www.tiktok.com/embed/v2/7071234567890123456" width="400" height="500" frameborder="0" allowfullscreen></iframe></li>
-    <li>Pinterest: <a href="https://www.pinterest.com" target="_blank">Acesse o Pinterest</a></li>
-</ul>
-"""
-
-@app.route("/cultura_interativa")
-def cultura_interativa():
-    return render_template_string(cultura_html)
