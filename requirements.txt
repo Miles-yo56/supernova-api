@@ -2,3 +2,15 @@ Flask
 pandas
 matplotlib
 qrcode
+gunicorn
+Jinja2
+itsdangerous
+click
+Werkzeug
+certifi
+charset-normalizer
+idna
+requests
+urllib3
+python-dateutil
+pillow
