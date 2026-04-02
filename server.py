@@ -1,17 +1,16 @@
-
-# # servidor.py
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 import os
 
-app = Flask(__name__)  # CORREÇÃO AQUI
+app = Flask(__name__)
 
+# Tela inicial com token
 @app.route("/")
-def home():
-    return "Supernova API Online 🚀"
+def login():
+    return "Tela de login - forneça seu token"
 
+# Perfil do aluno
 @app.route("/perfil")
 def perfil():
-    # Exemplo simples de perfil
     return jsonify({
         "nome": "Gabriel",
         "email": "gabrielsantosprodrigues85@gmail.com",
