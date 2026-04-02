@@ -1,11 +1,15 @@
-# server.py
-from flask import Flask, render_template_string, request, jsonify
+   from flask import Flask, render_template_string, request, redirect, url_for, jsonify
 import os
 import datetime
+import pandas as pd
+import matplotlib.pyplot as plt
+import io
+import base64
+import qrcode
 
 app = Flask(__name__)
 
-# Tokens válidos
+# ------------------- TOKENS -------------------
 valid_tokens = {
     "Matlabinc.67": "Dev",
     "Blinkinc.92": "Estudante",
@@ -13,71 +17,60 @@ valid_tokens = {
     "Sparta654.Mp": "Dev Exclusivo"
 }
 
-# Tela de login com imagem
+# ------------------- LOGIN -------------------
 login_html = """
 <!DOCTYPE html>
 <html>
 <head>
     <title>Login Supernova</title>
     <style>
-    {% raw %}
-        body { 
-            background-color: #1E1E2F; 
-            color: #fff; 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            padding-top: 50px; 
-        }
-        input[type=text] { padding: 10px; width: 250px; font-size: 16px; }
-        input[type=submit] { padding: 10px 20px; font-size: 16px; }
-        img { width: 300px; margin-bottom: 20px; border-radius: 10px; }
-        a { color: #00BFFF; text-decoration: none; font-weight: bold; }
-    {% endraw %}
+    body { background-color:#1E1E2F; color:#fff; font-family:Arial; text-align:center; padding-top:50px;}
+    input { padding:10px; font-size:16px; }
+    img { width:300px; margin-bottom:20px; border-radius:10px;}
+    a { color:#00BFFF; font-weight:bold; text-decoration:none; }
     </style>
 </head>
 <body>
-    <img src="https://i.pinimg.com/originals/4Q/hi/Xf/4QhIxfhZR.jpg" alt="Login Image"/>
+    <img src="https://i.pinimg.com/originals/4Q/hi/Xf/4QhIxfhZR.jpg"/>
     <h2>Forneça seu token</h2>
     <form method="post">
-        <input type="text" name="token" placeholder="Insira seu token" required/><br><br>
+        <input type="text" name="token" placeholder="Insira seu token"/><br><br>
         <input type="submit" value="Entrar"/>
     </form>
     {% if error %}
         <p style="color:red;">{{ error }}</p>
     {% endif %}
-    <p>Não encontrou o que precisava? Fale com o desenvolvedor: <a href="mailto:gabrielsantosprodrigues85@gmail.com">gabrielsantosprodrigues85@gmail.com</a></p>
+    <p>Não encontrou o que precisava? <a href="mailto:gabrielsantosprodrigues85@gmail.com">Contate o Dev</a></p>
 </body>
 </html>
 """
 
-# Dashboard
+# ------------------- DASHBOARD -------------------
 dashboard_html = """
 <!DOCTYPE html>
 <html>
 <head>
     <title>Supernova Dashboard</title>
     <style>
-    {% raw %}
-        body { background-color: #121212; color: #fff; font-family: Arial, sans-serif; margin:0; padding:0; }
-        header { background: #1E90FF; padding: 15px; text-align:center; font-size:24px; }
-        nav { background: #282828; padding: 10px; }
-        nav a { color:#00BFFF; margin: 0 10px; text-decoration:none; font-weight:bold; }
-        section { padding:20px; }
-        h2 { color:#00FFFF; }
-        .dev-only { display: inline-block; background: #FFD700; padding:5px 10px; margin:5px; border-radius:5px; cursor:pointer; }
-    {% endraw %}
+    body { background-color:#121212;color:#fff;font-family:Arial;margin:0;padding:0;}
+    header { background:#1E90FF;padding:15px;text-align:center;font-size:24px; }
+    nav { background:#282828;padding:10px; }
+    nav a { color:#00BFFF;margin:0 10px;text-decoration:none;font-weight:bold; }
+    .dev-only { display:inline-block;background:#FFD700;padding:5px 10px;border-radius:5px;cursor:pointer;}
+    section { padding:20px; }
     </style>
 </head>
 <body>
     <header>Supernova Space - {{ role }}</header>
     <nav>
+        <a href="/home?token={{ token }}">Home</a>
         <a href="/perfil?token={{ token }}">Perfil</a>
         <a href="/frequencia?token={{ token }}">Frequência</a>
         <a href="/pe-de-meia?token={{ token }}">Pé de Meia</a>
         <a href="/olimpico?token={{ token }}">Olimpíadas</a>
         <a href="/cultura?token={{ token }}">Cultura</a>
         {% if role.startswith("Dev") %}
-            <span class="dev-only"><a href="/liberar?token={{ token }}">Liberar</a></span>
+            <span class="dev-only"><a href="/dev?token={{ token }}">Dev</a></span>
         {% endif %}
     </nav>
     <section>
@@ -88,73 +81,9 @@ dashboard_html = """
 </html>
 """
 
-# Perfil do usuário
-@app.route("/perfil")
-def perfil():
-    token = request.args.get("token")
-    role = valid_tokens.get(token, "Visitante")
-    now = datetime.datetime.now()
-    return f"""
-    <h2>Perfil de {role}</h2>
-    <p>Data/Hora: {now.strftime('%d/%m/%Y %H:%M:%S')}</p>
-    <p>Foto de Perfil: <img src='https://i.pinimg.com/236x/23/Lz/4A/23Lz4AGye.jpg' width='100'></p>
-    <p>Email: gabrielsantosprodrigues85@gmail.com</p>
-    """
+# ------------------- ROTAS -------------------
 
-# Frequência
-@app.route("/frequencia")
-def frequencia():
-    frequencia_val = 85
-    alerta = "Atenção! Frequência abaixo de 80%" if frequencia_val < 80 else "Frequência ok"
-    return f"<h2>Frequência: {frequencia_val}%</h2><p>{alerta}</p>"
-
-# Pé de meia
-@app.route("/pe-de-meia")
-def pe_de_meia():
-    return """
-    <h2>Pé de Meia - Caixa Econômica</h2>
-    <ul>
-        <li>Depósito 1: 05/04/2026</li>
-        <li>Depósito 2: 05/05/2026</li>
-        <li>Depósito 3: 05/06/2026</li>
-    </ul>
-    """
-
-# Olimpíadas
-@app.route("/olimpico")
-def olimpico():
-    return """
-    <h2>Olimpíadas</h2>
-    <p>Lista de competições</p>
-    <ul>
-        <li>Olimpíada de Matemática - 2026</li>
-        <li>Olimpíada de Física - 2026</li>
-    </ul>
-    """
-
-# Cultura / Links
-@app.route("/cultura")
-def cultura():
-    return """
-    <h2>Cultura e Links</h2>
-    <ul>
-        <li><a href="https://www.youtube.com/@TecMundo">Canal Tec Mundo</a></li>
-        <li><a href="https://www.youtube.com/@CienciaTodoDia">Canal Ciência Todo Dia</a></li>
-        <li><a href="https://www.youtube.com/@MatematicaNoPapel">Canal Matemática no Papel</a></li>
-        <li><a href="https://www.pinterest.com/">Pinterest</a></li>
-    </ul>
-    """
-
-# Tela para Dev liberar perfis
-@app.route("/liberar")
-def liberar():
-    token = request.args.get("token")
-    if valid_tokens.get(token, "").startswith("Dev"):
-        return "<h2>Área de Liberação para Dev</h2><p>Aqui você pode liberar novas funções.</p>"
-    return "<h2>Acesso negado</h2>"
-
-# Rota de login principal
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET","POST"])
 def login():
     error = None
     if request.method == "POST":
@@ -166,6 +95,113 @@ def login():
             error = "Token inválido!"
     return render_template_string(login_html, error=error)
 
+@app.route("/perfil")
+def perfil():
+    token = request.args.get("token")
+    role = valid_tokens.get(token, "Visitante")
+    now = datetime.datetime.now()
+    return f"""
+    <h2>Perfil de {role}</h2>
+    <p>Data/Hora: {now.strftime('%d/%m/%Y %H:%M:%S')}</p>
+    <p>Foto de Perfil: <img src='https://i.pinimg.com/236x/23/Lz/4A/23Lz4AGye.jpg' width='150'></p>
+    <p>Email: gabrielsantosprodrigues85@gmail.com</p>
+    <p>Funcionalidades customizáveis: adicionar fotos PNG/JPEG</p>
+    """
+
+@app.route("/frequencia")
+def frequencia():
+    # Exemplo de dados de presença
+    df = pd.DataFrame({'Dia':['Seg','Ter','Qua','Qui','Sex'],'Presente':['Sim','Sim','Não','Sim','Sim']})
+    total = len(df)
+    sim_count = df['Presente'].value_counts().get('Sim',0)
+    porcentagem = round(sim_count/total*100,2)
+    
+    # Gráfico Pizza
+    fig, ax = plt.subplots()
+    ax.pie([sim_count, total-sim_count], labels=['Sim','Não'], autopct='%1.1f%%', colors=['#00FF00','#FF0000'])
+    img = io.BytesIO()
+    plt.savefig(img, format='png', bbox_inches="tight")
+    img.seek(0)
+    plot_url = base64.b64encode(img.getvalue()).decode()
+    
+    alerta = "Atenção! Frequência abaixo de 80%" if porcentagem < 80 else "Frequência ok"
+    return f"""
+    <h2>Frequência: {porcentagem}%</h2>
+    <p>{alerta}</p>
+    <img src="data:image/png;base64,{plot_url}">
+    """
+
+@app.route("/pe-de-meia")
+def pe_de_meia():
+    return """
+    <h2>Pé de Meia - Caixa Econômica</h2>
+    <ul>
+        <li>Depósito 1: 05/04/2026</li>
+        <li>Depósito 2: 05/05/2026</li>
+        <li>Depósito 3: 05/06/2026</li>
+    </ul>
+    """
+
+@app.route("/olimpico")
+def olimpico():
+    return """
+    <h2>Olimpíadas</h2>
+    <ul>
+        <li>ONC - Olimpíada Nacional de Ciências</li>
+        <li>OBA - Olimpíada Brasileira de Astronomia</li>
+        <li>OBMEP - Olimpíada Brasileira de Matemática</li>
+        <li>Canguru - Olimpíada Internacional de Matemática</li>
+    </ul>
+    """
+
+@app.route("/cultura")
+def cultura():
+    return """
+    <h2>Cultura e Integrações</h2>
+    <ul>
+        <li><a href="https://www.youtube.com">YouTube</a> - Vídeos integrados</li>
+        <li><a href="https://www.tiktok.com">TikTok</a></li>
+        <li><a href="https://www.google.com/chrome/">Google Chrome</a></li>
+    </ul>
+    """
+
+@app.route("/home")
+def home():
+    return """
+    <img src="https://i.pin.it/7qnhuklzY" width="500"/>
+    <h2 style="font-family:Times;">Qual foi a inspiração do projeto</h2>
+    <p style="font-style:italic;">Não foi uma escolha guiada por individualismo, foi pensando nos estudantes que querem ser um <u style='color:green'>diferencial</u> e que gostariam de aperfeiçoar-se constantemente e não ficarem para trás.</p>
+    
+    <h2 style="font-family:Times;">Por que de tantos sites, o seu seria diferente?</h2>
+    <p style="font-style:italic;">Porque o que faz um site <u style='color:purple'>diferente</u> são as pessoas que neles vivem, num site tudo é <u style='color:green'>orgânico</u>, assim como o corpo <u style='color:red'>humano</u>.</p>
+    
+    <h2 style="font-family:Times;">O que você espera desse projeto?</h2>
+    <p style="font-style:italic;">Que ele continue avançando com você, claro que uma hora ou outra vão ter momentos em que eu vou querer desistir desse site, mas se fui persistente até aqui, consigo ir mais longe. (Risos)</p>
+    """
+
+@app.route("/dev")
+def dev():
+    token = request.args.get("token")
+    role = valid_tokens.get(token,"Visitante")
+    if not role.startswith("Dev"):
+        return "<h2>Acesso negado</h2>"
+    return """
+    <h2>Área do Dev</h2>
+    <ul>
+        <li>Liberar acesso</li>
+        <li>Monitorar tráfego</li>
+        <li>Visitantes Online/Offline</li>
+        <li>Adicionar nova opção</li>
+        <li>Desativar perfil User</li>
+        <li>Atualizar dados cadastrais</li>
+        <li>Integrar I.A</li>
+        <li>PPC - Palavras-chave de pesquisa do usuário</li>
+        <li>Redefinir senha</li>
+        <li>Aumentar nível do token</li>
+    </ul>
+    """
+
+# ------------------- EXECUÇÃO -------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    port = int(os.environ.get("PORT",10000))
+    app.run(host="0.0.0.0", port=port, debug=True)       
